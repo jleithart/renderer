@@ -180,9 +180,9 @@ public class Render extends JComponent
 
      /*
      * Moves the starting position to the specified (x,y) location.
-     * This is the window point
+     * This is a window point
      */
-     public static void MoveTo2D(int x_pos, int y_pos, int windowIndex){
+     public static void MoveTo2D(double x_pos, double y_pos){
         curPos.SetCoords(x_pos, y_pos);
      }
 
@@ -193,7 +193,26 @@ public class Render extends JComponent
      */
      public static void DrawTo2D(Graphics g, double x_pos, double y_pos, int windowIndex){
 
-        g.drawLine((int)curPos.x, (int)curPos.y, (int)x_pos, (int)y_pos);
+        Point firstPoint = new Point(curPos.x,curPos.y);
+        Point secondPoint = new Point(x_pos, y_pos);
+
+        // the translated point to viewpoint
+        Point firstViewPoint;
+        Point secondViewPoint;
+
+        // the window point
+        drawPoint drawFirstPoint;
+        drawPoint drawSecondPoint;
+
+        //Translate the window point to the viewpoint
+        firstViewPoint = WindowToViewPort(firstPoint, windowIndex);
+        secondViewPoint = WindowToViewPort(secondPoint, windowIndex);
+
+
+        drawFirstPoint = ViewPortToFrameWindow(firstViewPoint, WindowList[windowIndex].Quadrant);
+        drawSecondPoint = ViewPortToFrameWindow(secondViewPoint, WindowList[windowIndex].Quadrant);
+        g.drawLine(drawFirstPoint.x, drawFirstPoint.y, drawSecondPoint.x, drawSecondPoint.y);
+
         curPos.SetCoords(x_pos, y_pos);
      }
 
@@ -346,17 +365,58 @@ public class Render extends JComponent
      // drawn only in window 0
      public static void ExponentialGraph(Graphics g){
         //loop thorugh the function and draw it
-        double x_value;
+        curPos.SetCoords(0, ExponentFunction(0));
+        int dotted = 0;
+        for(double i = 0; i < 3*3.14; i += 0.01){
+            // Graphics g, double x_pos, double y_pos, int windowIndex
+            if(dotted % 3 == 2){
+                MoveTo2D(i, ExponentFunction(i));
+            }
+            else{
+                DrawTo2D(g, i, ExponentFunction(i), 0);
+            }
+            dotted++;
+        }
+     }
+
+     public static double ExponentFunction(double inValue)
+     {
+        return 4.0*Math.exp(-0.25*inValue)*Math.cos(4*inValue);
      }
 
      // drawn only in window 1
      public static void DiscontinuityGraph(Graphics g){
         //loop through the given function and draw it
+        curPos.SetCoords(-9, DiscontinuityFunction(-9));
+        for(double i = -9; i < 9; i+= 0.1){
+            DrawTo2D(g, i, DiscontinuityFunction(i), 1);
+        }
+     }
+
+     public static double DiscontinuityFunction(double inValue)
+     {
+        double retval = 2/(0.5 - Math.sin(inValue/2));
+
+        if(retval > 10.0){
+            retval = 10.0;
+        }
+        else if(retval < -10.0){
+            retval = -10.0;
+        }
+        return retval;
      }
 
      //drawn only in window 2
      public static void LoopyGraph(Graphics g){
-        //loop through the given function and draw it
+        curPos.SetCoords(-0.5, LoopyFunction(-0.5));
+        for(double i = -0.5; i < 0.5; i+=0.01){
+            DrawTo2D(g, i, LoopyFunction(i), 2);
+        }
+     }
+
+     public static double LoopyFunction(double inValue)
+     {
+        return Math.sqrt(0.5*(1.0)*(1.0)*(inValue*inValue*inValue) + (0.5*1.0*1.0*inValue*inValue));
      }
 
      public static void Branding(Graphics g){
