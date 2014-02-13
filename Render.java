@@ -175,20 +175,20 @@ public class Render extends JComponent
             case 0: //will always be in quadrant 1
                 sizeX = WindowList[windowIndex].RightX - WindowList[windowIndex].LeftX;
                 sizeY = WindowList[windowIndex].TopY - WindowList[windowIndex].BotY;
-                tmpCoordinate.SetCoords( (sizeX * windowPoint.x/sizeX)/sizeX,
-                                         (sizeY/2 + (sizeY * windowPoint.y/sizeY))/sizeY);
+                tmpCoordinate.SetCoords( (windowPoint.x)/sizeX,
+                                         (sizeY/2 + (windowPoint.y))/sizeY);
                 break;
             case 1: //will always be in quadrant 3
                 sizeX = WindowList[windowIndex].RightX - WindowList[windowIndex].LeftX;
                 sizeY = WindowList[windowIndex].TopY - WindowList[windowIndex].BotY;
-                tmpCoordinate.SetCoords( (sizeX/2 + (sizeX * windowPoint.x/sizeX))/sizeX,
-                                         (sizeY/2 + (sizeY * windowPoint.y/sizeY))/sizeY);
+                tmpCoordinate.SetCoords( (sizeX/2 + (windowPoint.x))/sizeX,
+                                         (sizeY/2 + (windowPoint.y))/sizeY);
                 break;
             case 2: //window 2 will always be in quadrant 4
                 sizeX = WindowList[windowIndex].RightX - WindowList[windowIndex].LeftX;
                 sizeY = WindowList[windowIndex].TopY - WindowList[windowIndex].BotY;
-                tmpCoordinate.SetCoords( (sizeX/2 + (sizeX * windowPoint.x/sizeX))/sizeX,
-                                         (sizeY/2 + (sizeY * windowPoint.y/sizeY))/sizeY);
+                tmpCoordinate.SetCoords( (sizeX/2 + (windowPoint.x))/sizeX,
+                                         (sizeY/2 + (windowPoint.y))/sizeY);
                 break;
         }
         return tmpCoordinate;
@@ -288,26 +288,6 @@ public class Render extends JComponent
             g.drawLine(drawFirstPoint.x, drawSecondPoint.y, drawFirstPoint.x, drawFirstPoint.y);
         }
 
-     }
-
-     /*
-     *  Labels the axis in the given window with hash marks
-     */
-
-     public static void LabelAxis(Graphics g, int window){
-        Point first = new Point(0, 0);
-        Point second = new Point(0, 0);
-
-        Point firstVP;  //viewPort point
-        Point secondVP; //viewPort point
-        double sizeX = (WindowList[window].RightX + WindowList[window].LeftX);
-        double inc = sizeX/10;
-
-        for(double i = WindowList[window].LeftX; i < sizeX; i+=inc){
-            first.SetCoords(i, inc/2);
-         //   second.SetCoords(i, )
-
-        }
      }
 
      /*
