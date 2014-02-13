@@ -10,10 +10,11 @@ import javax.swing.*;
 
 public class Render extends JComponent
 {
-    static int windowHeight = 500;
-    static int windowWidth = 500;
-    //create 4 viewports;
+    static int FRAME_HEIGHT = 500;
+    static int FRAME_WIDTH = 500;
 
+
+    // A viewport struct/class
     private static class ViewPort
     {
         public double LeftX;
@@ -30,26 +31,27 @@ public class Render extends JComponent
 
     }
 
+    // the Window Struct/Class
     private static class Window
     {
         public double LeftX;
         public double RightX;
         public double TopY;
         public double BotY;
-        public int Quadrant;
+        public int Quadrant;    //which viewport is it in?
 
-        private Window(double LX, double RX, double TY, double BT, int q){
+        private Window(double LX, double RX, double TY, double BY, int q){
             this.LeftX = LX;
             this.RightX = RX;
             this.TopY = TY;
-            this.BotY = BT;
+            this.BotY = BY;
             this.Quadrant = q;
         }
     }
 
 
-    //class for a pixel point.
-    // must be integers
+    // This is the class/struct for the Frame Point
+    // This must be in integers to correlate to the pixels
     private static class drawPoint
     {
         public int x;
@@ -65,6 +67,7 @@ public class Render extends JComponent
         }
     }
 
+    //My point Class/Struct
     private static class Point
     {
         public double x;
@@ -80,10 +83,13 @@ public class Render extends JComponent
         }
     }
 
+    // The 4 viewports that I need to make up the 4 quadrants on my frame
     static ViewPort[] arrayViewPort = new ViewPort[4];
+    // 3 Windows that will have things drawn in them
     static Window[] WindowList = new Window[3];
 
-    // window current position
+    // The current position of the "pen"
+    // This is in relation to the window
     static Point curPos = new Point(0, 0);
 
 
@@ -104,12 +110,20 @@ public class Render extends JComponent
 
      public void paintComponent( Graphics g )
      {
-        ShowViewport(g);
-        ShowWindow(g);
-        ExponentialGraph(g);
-        DiscontinuityGraph(g);
-        LoopyGraph(g);
-        Branding(g);
+        //allow resizing over everything drawn
+        FRAME_HEIGHT = getHeight();
+        FRAME_WIDTH = getWidth();
+
+        ShowViewport(g);        // draw the quadrilaterals for each viewport
+        ShowWindow(g);          // draw the axes in each window
+
+        ExponentialGraph(g);    // Plot the exponential graph
+        DiscontinuityGraph(g);  // Plot the discontinuous graph
+        LoopyGraph(g, 0.5);     // Plot the loopy graph where b = 0.5
+        LoopyGraph(g, 1);       // Plot the loopy graph where b = 1.0
+        LoopyGraph(g, 2);       // Plot the loopy graph where b = 2.0
+
+        Branding(g);            // Label the Frame with my name
      }
 
      /*
@@ -118,9 +132,11 @@ public class Render extends JComponent
       * Initializes default values
      */
      public static void InitGraphics(JFrame f){
-        f.setSize( windowHeight, windowWidth);
+        f.setSize( FRAME_HEIGHT, FRAME_WIDTH);
         f.getContentPane().add( new Render() );
         f.setVisible( true );
+
+        // set the values of each viewport
         SetViewport();
         SetWindow();
 
@@ -144,7 +160,7 @@ public class Render extends JComponent
      { 
         WindowList[0] = new Window(0, 3*3.14, 5, -5, 0);  // top right quadrant
         WindowList[1] = new Window(-9, 9, 10, -10, 2);  // bottom left quadrant
-        WindowList[2] = new Window(-0.5, 0.5, 0.5, -0.5, 3);//bottom right quadrant
+        WindowList[2] = new Window(-1.0, 1.0, 1.0, -1.0, 3);//bottom right quadrant
      }
 
      /*
@@ -208,30 +224,12 @@ public class Render extends JComponent
         firstViewPoint = WindowToViewPort(firstPoint, windowIndex);
         secondViewPoint = WindowToViewPort(secondPoint, windowIndex);
 
-
+        //now draw it
         drawFirstPoint = ViewPortToFrameWindow(firstViewPoint, WindowList[windowIndex].Quadrant);
         drawSecondPoint = ViewPortToFrameWindow(secondViewPoint, WindowList[windowIndex].Quadrant);
         g.drawLine(drawFirstPoint.x, drawFirstPoint.y, drawSecondPoint.x, drawSecondPoint.y);
 
-        curPos.SetCoords(x_pos, y_pos);
-     }
-
-     /*
-      * Linear Interpolation
-      * Finds the Y value given the known x and y values
-     */
-     public static int InterpolateY(int ViewIndex, int x_value){
-        ViewPort view = arrayViewPort[ViewIndex];
-        //int ret_val = (viewportminy + (max y - min y)((x_value - minx)/(maxx - minx)));
-        int retval = 0;// (view.BotY + (view.TopY - view.BotY)*(x_value - view.LeftX)/(view.RightX - view.LeftX));
-        //return ret_val;
-        return retval;
-     }
-
-     public static int InterpolateX(int ViewIndex, int y_value){
-        ViewPort view = arrayViewPort[ViewIndex];
-        int retval = 0;//(view.LeftX + (view.RightX - view.LeftX)*(y_value - view.BotY)/(view.TopY - view.BotY));
-        return retval;
+        MoveTo2D(x_pos, y_pos);
      }
 
      /*
@@ -240,37 +238,38 @@ public class Render extends JComponent
      public static drawPoint ViewPortToFrameWindow(Point coordinate, int index){
 
         drawPoint tmpCoordinate = new drawPoint(0, 0);
-        // frame upper left (0,0)
-        // frame bottom right (500,500)
-        // given a viewport coordinate, where should we draw it?
+
+        // given a viewport coordinate, find the pixel placement
         switch(index){
             case 0:
-                tmpCoordinate.SetCoords((int) (windowWidth/2 + (windowWidth/2 * coordinate.x)),
-                                        (int) (windowHeight/2 - (windowHeight/2*coordinate.y)));
+                // Top Right quadrant
+                tmpCoordinate.SetCoords((int) (FRAME_WIDTH/2 + (FRAME_WIDTH/2 * coordinate.x)),
+                                        (int) (FRAME_HEIGHT/2 - (FRAME_HEIGHT/2*coordinate.y)));
                 break;
             case 1:
-                tmpCoordinate.SetCoords((int) (0 + (windowWidth/2 * coordinate.x)),
-                                        (int) (windowHeight/2 - (windowHeight/2*coordinate.y)));
+                // Top Left Quadrant
+                tmpCoordinate.SetCoords((int) (0 + (FRAME_WIDTH/2 * coordinate.x)),
+                                        (int) (FRAME_HEIGHT/2 - (FRAME_HEIGHT/2*coordinate.y)));
                 break;
             case 2:
-                tmpCoordinate.SetCoords((int) (0 + (windowWidth/2 * coordinate.x)),
-                                        (int) (windowHeight - (windowHeight/2*coordinate.y)));
+                // Bottom Left quadrant
+                tmpCoordinate.SetCoords((int) (0 + (FRAME_WIDTH/2 * coordinate.x)),
+                                        (int) (FRAME_HEIGHT - (FRAME_HEIGHT/2*coordinate.y)));
                 break;
             case 3:
-                tmpCoordinate.SetCoords((int) (windowWidth/2 + (windowWidth/2 * coordinate.x)),
-                                        (int) (windowHeight - (windowHeight/2*coordinate.y)));
+                // Bottom Left qudrant
+                tmpCoordinate.SetCoords((int) (FRAME_WIDTH/2 + (FRAME_WIDTH/2 * coordinate.x)),
+                                        (int) (FRAME_HEIGHT - (FRAME_HEIGHT/2*coordinate.y)));
                 break;    
         }
         
 
-        //first quadrant is 250,250 to 500, 0
-        //second quadrant is 250,250, to 0, 0
         
         return tmpCoordinate;
      }
 
      /*
-     * Displays the (x,y) viewport coordinates
+     * Draws a rectangle around each viewport
      */
      public static void ShowViewport(Graphics g){
         //draws the viewports
@@ -290,6 +289,10 @@ public class Render extends JComponent
         }
 
      }
+
+     /*
+     *  Labels the axis in the given window with hash marks
+     */
 
      public static void LabelAxis(Graphics g, int window){
         Point first = new Point(0, 0);
@@ -334,6 +337,7 @@ public class Render extends JComponent
         //end x-axis
 
         //y-axis
+        // the 1st quadrant has no negative axis
         if(window != 0){
             firstAxisPoint.SetCoords((WindowList[window].LeftX + WindowList[window].RightX)/2, WindowList[window].BotY);
             secondAxisPoint.SetCoords((WindowList[window].LeftX + WindowList[window].RightX)/2, WindowList[window].TopY);
@@ -350,10 +354,11 @@ public class Render extends JComponent
         drawFirstPoint = ViewPortToFrameWindow(firstViewPoint, WindowList[window].Quadrant);
         drawSecondPoint = ViewPortToFrameWindow(secondViewPoint, WindowList[window].Quadrant);
         g.drawLine(drawFirstPoint.x, drawFirstPoint.y, drawSecondPoint.x, drawSecondPoint.y);
+        //end y axis
      }
 
      /*
-     * Displays the (x,y) window coordinates
+     * Draws the axis for each window
      */
      public static void ShowWindow(Graphics g){
         //draw all the axis
@@ -362,64 +367,164 @@ public class Render extends JComponent
         }
      }
 
-     // drawn only in window 0
+     /*
+     * Draws the exponential graph 
+     * This plot takes place only in quadrant 1, window-0
+     */
      public static void ExponentialGraph(Graphics g){
         //loop thorugh the function and draw it
         curPos.SetCoords(0, ExponentFunction(0));
         int dotted = 0;
-        for(double i = 0; i < 3*3.14; i += 0.01){
-            // Graphics g, double x_pos, double y_pos, int windowIndex
-            if(dotted % 3 == 2){
-                MoveTo2D(i, ExponentFunction(i));
+        double xVal = WindowList[0].LeftX;
+        double xInc = 4.0/100;
+        MoveTo2D(xVal, ExponentFunction(xVal));
+        for(int i = 0; i < 1000; i++){
+            // move the pen every two times
+            if(dotted % 2 == 1){
+                MoveTo2D(xVal, ExponentFunction(xVal));
             }
             else{
-                DrawTo2D(g, i, ExponentFunction(i), 0);
+                DrawTo2D(g, xVal, ExponentFunction(xVal), 0);
             }
             dotted++;
+            xVal += xInc;
+
         }
      }
 
+     /*
+     * Returns the y-value for the function given
+     */
      public static double ExponentFunction(double inValue)
      {
         return 4.0*Math.exp(-0.25*inValue)*Math.cos(4*inValue);
      }
 
-     // drawn only in window 1
+     /*
+     * Draws the Discontinuous graph
+     * This plot is drawn only in quadrant 3, window-1
+     */
      public static void DiscontinuityGraph(Graphics g){
         //loop through the given function and draw it
-        curPos.SetCoords(-9, DiscontinuityFunction(-9));
-        for(double i = -9; i < 9; i+= 0.1){
-            DrawTo2D(g, i, DiscontinuityFunction(i), 1);
+        int dotted = 0;
+        double xVal = WindowList[1].LeftX;
+        double xInc = 4.0/100;
+        double yVal = DiscontinuityFunction(xVal);
+        MoveTo2D(xVal, yVal);
+        for(int i = 0; i < 1000; i++){
+            yVal = DiscontinuityFunction(xVal);
+
+            if(yVal <= WindowList[1].TopY && yVal >= WindowList[1].BotY){
+                DrawTo2D(g, xVal, yVal, 1);
+            }
+            else{
+                if(yVal > WindowList[1].TopY) yVal = WindowList[1].TopY;
+                else if(yVal < WindowList[1].BotY) yVal = WindowList[1].BotY;
+                MoveTo2D(xVal, yVal);
+            }
+            xVal += xInc;
+            if(xVal > WindowList[1].RightX) break;
         }
      }
 
+     /*
+     * Returns the y value for the function given
+     * If the y-value is outside the bounds of the window, return the window point
+     */
      public static double DiscontinuityFunction(double inValue)
      {
         double retval = 2/(0.5 - Math.sin(inValue/2));
-
-        if(retval > 10.0){
-            retval = 10.0;
-        }
-        else if(retval < -10.0){
-            retval = -10.0;
-        }
         return retval;
      }
 
-     //drawn only in window 2
-     public static void LoopyGraph(Graphics g){
-        curPos.SetCoords(-0.5, LoopyFunction(-0.5));
-        for(double i = -0.5; i < 0.5; i+=0.01){
-            DrawTo2D(g, i, LoopyFunction(i), 2);
+     /*
+     * Draws the Loopy graph for some constant given
+     * This plot is drawn only in quadrant 4, window-2
+     */
+     public static void LoopyGraph(Graphics g, double bValue){
+        double LoopValue = LoopyFunction(WindowList[2].LeftX, bValue);
+        MoveTo2D(WindowList[2].LeftX, LoopValue);
+
+        Color lineColor;
+
+        // change the color depending on which loop it is
+        if(bValue == 0.5){
+            lineColor = Color.red;
         }
+        else if(bValue == 1.0){
+            lineColor = Color.green;
+        }
+        else{
+            lineColor = Color.blue;
+        }
+
+        g.setColor(lineColor);
+
+        // draw in the positive Y-axis
+        for(double i = WindowList[2].LeftX; i < WindowList[2].RightX; i+=0.01){            
+
+            LoopValue = LoopyFunction(i, bValue);
+            if(!Double.isNaN(LoopValue)){
+                if(LoopValue < 0){
+                    LoopValue = -Math.sqrt(LoopValue);
+                }
+                else{
+                    LoopValue = Math.sqrt(LoopValue);
+                }
+                if(LoopValue > WindowList[2].BotY && LoopValue < WindowList[2].TopY){
+
+                    //positive y
+                    DrawTo2D(g, i, LoopValue, 2);
+
+                }
+                else{
+                    MoveTo2D(i, 0);
+                }
+            }
+        }   //end positive Y
+
+        // Begin negative Y-axis
+        LoopValue = LoopyFunction(WindowList[2].LeftX, bValue);
+        MoveTo2D(WindowList[2].LeftX, -LoopValue);
+        for(double i = WindowList[2].LeftX; i < WindowList[2].RightX; i+=0.01){
+            LoopValue = LoopyFunction(i, bValue);
+            if(!Double.isNaN(LoopValue)){
+                if(LoopValue < 0){
+                    LoopValue = -Math.sqrt(LoopValue);
+                }
+                else{
+                    LoopValue = Math.sqrt(LoopValue);
+                }
+                if(LoopValue > WindowList[2].BotY && LoopValue < WindowList[2].TopY){
+
+                    //positive y
+                    DrawTo2D(g, i, -LoopValue, 2);
+
+                }
+                else{
+                    MoveTo2D(i, 0);
+                }
+            }
+        }
+
      }
 
-     public static double LoopyFunction(double inValue)
+     /*
+     *  Returns the square of the value calculated by the function
+     */
+
+     public static double LoopyFunction(double inValue, double bValue)
      {
-        return Math.sqrt(0.5*(1.0)*(1.0)*(inValue*inValue*inValue) + (0.5*1.0*1.0*inValue*inValue));
+        double retval = (bValue*(1.0)*(1.0)*(inValue*inValue*inValue) + (0.5*1.0*1.0*inValue*inValue));
+        return retval;
      }
 
+     /*
+     * Draws my name, class, date, and assignment #
+     * Drawn in Quadrant 1, Top Left corner
+     */
      public static void Branding(Graphics g){
+        g.setColor(Color.black);
         g.drawString("Jordan Leithart", 5, 10);
         g.drawString("CS 324", 5, 20);
         g.drawString("February 14, 2014", 5, 30);
